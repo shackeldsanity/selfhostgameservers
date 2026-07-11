@@ -84,5 +84,20 @@ jobs:
           if problems:
               alert("\n".join("• " + p for p in problems))
               sys.exit(1)
+
+          # On a MANUAL run, post a green confirmation so you can verify the pipeline
+          # + webhook on demand. Scheduled runs stay silent-unless-broken.
+          if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+              url = os.environ.get("DISCORD_WEBHOOK_URL", "")
+              if url:
+                  body = {"embeds": [{"title": "✅ The Iris — manual check",
+                                      "description": "All servers healthy; live config matches the approved baseline.",
+                                      "color": 0x2ECC71}]}
+                  try:
+                      urllib.request.urlopen(urllib.request.Request(
+                          url, data=json.dumps(body).encode(),
+                          headers={"Content-Type": "application/json"}), timeout=15)
+                  except Exception:
+                      print("discord post failed (network or webhook error)")
           print("All heartbeats OK")
           PY
