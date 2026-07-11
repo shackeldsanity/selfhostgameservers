@@ -1,10 +1,10 @@
 {
   "game": "palworld",
-  "ts": 1783811552,
-  "iso": "2026-07-11T23:12:32Z",
-  "status": "violation",
-  "runtime_config_sha256": "f99d557cd888f96c1b5fe8d1d63f3f1869882f488caa0979b81f6646c2c0be53",
-  "approved_config_sha256": "f99d557cd888f96c1b5fe8d1d63f3f1869882f488caa0979b81f6646c2c0be53",
+  "ts": 1783811855,
+  "iso": "2026-07-11T23:17:35Z",
+  "status": "ok",
+  "runtime_config_sha256": "4f9d230ef86db90b27221fa6c01e2522fb5d30c554889b3deb800edf98dac6f7",
+  "approved_config_sha256": "4f9d230ef86db90b27221fa6c01e2522fb5d30c554889b3deb800edf98dac6f7",
   "image": "sha256:ae412908f99ed5422bb977d152838a6e2f5d1a6f1f5191a7d24217dcaccb7046",
-  "git_commit": "d14b270"
+  "git_commit": "8dcc1c2"
 }
