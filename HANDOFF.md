@@ -49,9 +49,14 @@ qm guest cmd <VMID> network-get-interfaces   # get the VM's IP once the agent is
 ```
 
 ## 6. Bootstrap inside the VM
-Either SSH in (`ssh ubuntu@<vm-ip>`) or use `qm guest exec`, then run:
+SSH in (`ssh ubuntu@<vm-ip>`) — or use `qm guest exec`. The repo is NOT on the VM
+yet, so fetch the bootstrap script first; it installs Docker + git and clones the
+repo to /opt itself:
 ```bash
-REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git bash /opt/selfhostgameservers/proxmox/bootstrap-vm.sh
+sudo apt-get update && sudo apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/shackeldsanity/selfhostgameservers/main/proxmox/bootstrap-vm.sh -o /tmp/bootstrap-vm.sh
+cat /tmp/bootstrap-vm.sh    # optional: review before running
+REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git bash /tmp/bootstrap-vm.sh
 ```
 
 ## 7. Deploy (inside the VM, in /opt/selfhostgameservers)

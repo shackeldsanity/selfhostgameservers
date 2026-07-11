@@ -67,12 +67,14 @@ VM sizing — one shared VM hosts every game, so size for the sum. Palworld alon
 headroom per extra game.
 
 **3. Bootstrap the VM.** SSH in and run the bootstrap — it installs Docker, enables
-the firewall (SSH), and clones this repo:
+the firewall (SSH), and clones this repo. The repo isn't on the VM yet, so fetch
+the script first (it does the cloning):
 
 ```bash
 ssh ubuntu@<vm-ip>
-REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git \
-  bash /opt/selfhostgameservers/proxmox/bootstrap-vm.sh
+sudo apt-get update && sudo apt-get install -y curl
+curl -fsSL https://raw.githubusercontent.com/shackeldsanity/selfhostgameservers/main/proxmox/bootstrap-vm.sh -o /tmp/bootstrap-vm.sh
+REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git bash /tmp/bootstrap-vm.sh
 ```
 
 (Prefer zero-touch? Use [`proxmox/cloud-init-user-data.yaml`](proxmox/cloud-init-user-data.yaml)
