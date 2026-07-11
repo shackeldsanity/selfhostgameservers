@@ -1,12 +1,10 @@
 name: iris-status
-# Periodic proof-of-life to #the-iris so the channel isn't just silent — a skeptic
-# reading an empty channel might assume nothing is configured. This posts a green
-# "all healthy" summary on a schedule (and red if anything is ever wrong), so anyone
-# can SEE the audit is live and continuously checking. Immediate problem-alerts still
-# come from heartbeat-check every 15 min.
+# Periodic proof-of-life to #the-iris so the channel isn't just silent. Posts a green
+# "all healthy" pulse (server online + uptime + config matches approved) on a schedule,
+# and red if anything is wrong. Immediate problem-alerts still come from heartbeat-check.
 on:
   schedule:
-    - cron: "0 */6 * * *"   # every 6 hours (change to taste, e.g. "0 8 * * *" for once daily at 08:00 UTC)
+    - cron: "0 */6 * * *"   # every 6 hours (change to taste)
   workflow_dispatch:
 
 jobs:
@@ -26,7 +24,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python3 - <<'PY'
-          import glob, json, os, sys, time, urllib.request
+          import calendar, glob, json, os, time, urllib.request
 
           def post(title, desc, color):
               url = os.environ.get("DISCORD_WEBHOOK_URL", "")
@@ -50,6 +48,18 @@ jobs:
                           return line
               return None
 
+          def uptime(started):
+              if not started:
+                  return ""
+              try:
+                  s = started.replace("Z", "").split(".")[0]
+                  secs = int(time.time()) - calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%S"))
+                  secs = max(secs, 0)
+                  d, r = divmod(secs, 86400); h, r = divmod(r, 3600); mi = r // 60
+                  return ((f"{d}d " if d else "") + (f"{h}h " if (h or d) else "") + f"{mi}m").strip()
+              except Exception:
+                  return ""
+
           MAX_AGE = 1800
           now = int(time.time())
           games = [os.path.basename(d.rstrip("/")) for d in glob.glob("games/*/")
@@ -64,25 +74,30 @@ jobs:
               if hb.get("status") == "not-started":
                   lines.append(f"• **{g}**: ⏳ not deployed yet"); continue
               age = now - int(hb.get("ts", 0))
+              fresh = age <= MAX_AGE
               approved = approved_for(g)
               hash_ok = (not approved or approved == "REPLACE_AFTER_FIRST_DEPLOY"
                          or hb.get("runtime_config_sha256") == approved)
-              if hb.get("status") == "ok" and age <= MAX_AGE and hash_ok:
-                  lines.append(f"• **{g}**: ✅ healthy · live config matches approved · checked {age//60}m ago")
+              running = hb.get("server_running", hb.get("status") == "ok")
+              up = uptime(hb.get("server_started", ""))
+              online = f"🟢 online (up {up})" if running and up else ("🟢 online" if running else "🔴 **OFFLINE**")
+              if running and fresh and hb.get("status") == "ok" and hash_ok:
+                  lines.append(f"• **{g}**: {online} · 🔒 admin locked · config matches approved · checked {age//60}m ago")
               else:
                   all_ok = False
                   why = []
-                  if age > MAX_AGE: why.append(f"heartbeat stale ({age//60}m)")
-                  if hb.get("status") != "ok": why.append(f"status={hb.get('status')}")
+                  if not running: why.append("server OFFLINE")
+                  if not fresh: why.append(f"heartbeat stale ({age//60}m)")
+                  if running and hb.get("status") != "ok": why.append(f"status={hb.get('status')}")
                   if not hash_ok: why.append("config DRIFT vs approved")
-                  lines.append(f"• **{g}**: 🔴 {', '.join(why)}")
+                  lines.append(f"• **{g}**: {online} — 🔴 " + ", ".join(why))
 
           stamp = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
           if all_ok:
               post("✅ The Iris — all servers healthy",
                    "\n".join(lines) +
                    f"\n\nAdmin remains disabled on every server and nothing has changed.\n"
-                   f"_Checked {stamp}. This automated report posts on a schedule so you can see the audit is live and watching._",
+                   f"_Checked {stamp}. Automated proof-of-life — posts on a schedule so you can see the audit is live._",
                    0x2ECC71)
           else:
               post("⚠️ The Iris — attention needed",

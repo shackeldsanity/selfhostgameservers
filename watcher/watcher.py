@@ -116,6 +116,18 @@ def image_digest(container):
     return sh(["docker", "inspect", "--format", "{{.Image}}", container]) or "unknown"
 
 
+def container_status(container):
+    """Return (running: bool, health: str, started_iso: str) for the game container."""
+    out = sh(["docker", "inspect", "--format",
+              "{{.State.Running}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}|{{.State.StartedAt}}",
+              container])
+    parts = out.split("|") if out else []
+    running = len(parts) > 0 and parts[0].strip() == "true"
+    health = parts[1].strip() if len(parts) > 1 else "unknown"
+    started = parts[2].strip() if len(parts) > 2 else ""
+    return running, health, started
+
+
 def git_commit():
     return sh(["git", "-C", REPO_DIR, "rev-parse", "--short", "HEAD"]) or "unknown"
 
@@ -139,14 +151,18 @@ def heartbeat_path(name):
     return os.path.join(HEARTBEAT_REPO, "heartbeat", f"{name}.json")
 
 
-def write_heartbeat(m, status, live_hash, approved):
+def write_heartbeat(m, status, live_hash, approved, srv):
     hp = heartbeat_path(m["name"])
     os.makedirs(os.path.dirname(hp), exist_ok=True)
+    running, health, started = srv
     hb = {
         "game": m["name"],
         "ts": int(time.time()),
         "iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "status": status,
+        "server_running": running,
+        "server_health": health,
+        "server_started": started,
         "runtime_config_sha256": live_hash,
         "approved_config_sha256": approved,
         "image": image_digest(m["container"]),
@@ -197,6 +213,7 @@ def main():
             problems = []
             status = "ok"
 
+            srv = container_status(m["container"])
             if text is None:
                 problems.append("live config not found — server may be down")
                 status = "config-missing"
@@ -207,12 +224,16 @@ def main():
                     problems.append(f"config DRIFT: live {live_hash[:12]} != approved {approved[:12]}")
                 if problems:
                     status = "violation"
+            if not srv[0]:  # container not running
+                problems.append("server is OFFLINE (container not running)")
+                if status == "ok":
+                    status = "server-down"
 
-            if problems and last_alert.get(m["name"]) != live_hash:
+            if problems and last_alert.get(m["name"]) != (live_hash, srv[0]):
                 discord(f"⚠️ {m.get('display_name', m['name'])} integrity alert", problems)
-                last_alert[m["name"]] = live_hash
+                last_alert[m["name"]] = (live_hash, srv[0])
 
-            write_heartbeat(m, status, live_hash, approved)
+            write_heartbeat(m, status, live_hash, approved, srv)
 
         now = time.time()
         if HEARTBEAT_PUSH and now - last_push >= PUSH_INTERVAL:

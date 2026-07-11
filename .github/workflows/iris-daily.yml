@@ -1,8 +1,8 @@
 name: iris-daily
-# Once a day, post to #the-iris: (1) the CURRENT server config for each game (with
-# admin locks confirmed), and (2) a change log of every config change in the last
-# 24h — pulled straight from the signed git history. Turns the audit channel into a
-# readable, verifiable daily record instead of a black box.
+# Once a day, post to #the-iris: (1) each server's ONLINE/OFFLINE state + uptime,
+# (2) its CURRENT config (with admin locks confirmed), and (3) a change log of every
+# config change in the last 24h — from the signed git history. A readable, verifiable
+# daily record instead of a black box.
 on:
   schedule:
     - cron: "0 8 * * *"   # daily at 08:00 UTC (change to taste)
@@ -14,13 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0            # full history for the 24h change log
+          fetch-depth: 0
+      - name: Load latest heartbeats from the heartbeat branch
+        run: |
+          if git fetch origin heartbeat 2>/dev/null; then
+            git checkout origin/heartbeat -- heartbeat 2>/dev/null || true
+          fi
       - name: Post daily report to #the-iris
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python3 - <<'PY'
-          import glob, json, os, subprocess, time, urllib.request
+          import calendar, glob, json, os, subprocess, time, urllib.request
           REPO = "https://github.com/ShackledSanity/selfhostgameservers"
 
           def post(title, desc, color):
@@ -47,27 +52,49 @@ jobs:
                           k, v = line.split("=", 1); d[k.strip()] = v.strip()
               return d
 
+          def uptime(started):
+              if not started:
+                  return ""
+              try:
+                  s = started.replace("Z", "").split(".")[0]
+                  secs = max(int(time.time()) - calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%S")), 0)
+                  d, r = divmod(secs, 86400); h, r = divmod(r, 3600); mi = r // 60
+                  return ((f"{d}d " if d else "") + (f"{h}h " if (h or d) else "") + f"{mi}m").strip()
+              except Exception:
+                  return ""
+
           games = [os.path.basename(x.rstrip("/")) for x in glob.glob("games/*/")
                    if not os.path.basename(x.rstrip("/")).startswith("_")]
 
-          sections = []; all_locked = True
+          sections = []; all_good = True
           for g in sorted(games):
               mpath = f"games/{g}/manifest.json"
               m = json.load(open(mpath)) if os.path.exists(mpath) else {}
               env = read_env(f"games/{g}/game.env")
-              # admin locks, from the manifest's source_checks
+              disp = m.get("display_name", g)
+              # online / uptime from the heartbeat
+              hb_path = os.path.join("heartbeat", g + ".json")
+              hb = json.load(open(hb_path)) if os.path.exists(hb_path) else {}
+              running = hb.get("server_running", None)
+              up = uptime(hb.get("server_started", ""))
+              if running is True:
+                  header_state = f"🟢 online (up {up})" if up else "🟢 online"
+              elif running is False:
+                  header_state = "🔴 **OFFLINE**"; all_good = False
+              else:
+                  header_state = "⚪ status unknown"
+              # admin locks from manifest source_checks
               admin_ok = True
               for chk in m.get("source_checks", []):
                   val = read_env(f"games/{g}/{chk['file']}").get(chk["key"])
                   if "equals" in chk and val != chk["equals"]: admin_ok = False
                   if chk.get("empty") and val: admin_ok = False
+              if not admin_ok: all_good = False
               lock = "🔒 Admin: **DISABLED** (no admin password · RCON off · REST off)" if admin_ok \
-                     else "🚨 Admin: **CHANGED — check #the-iris alerts**"
-              if not admin_ok: all_locked = False
+                     else "🚨 Admin: **CHANGED — see #the-iris alerts**"
               admin_keys = {c["key"] for c in m.get("source_checks", [])}
               settings = [f"`{k}={v}`" for k, v in env.items() if k not in admin_keys and v != ""]
-              disp = m.get("display_name", g)
-              sections.append(f"🎮 **{disp}**\n{lock}\n" +
+              sections.append(f"🎮 **{disp}** — {header_state}\n{lock}\n" +
                               ("Settings: " + " · ".join(settings) if settings else "Settings: (defaults)") +
                               f"\n📖 [full public config]({REPO}/blob/main/games/{g}/game.env)")
 
@@ -80,19 +107,18 @@ jobs:
               out = ""
           rows = [l.split("\t", 2) for l in out.splitlines() if l]
           if rows:
-              shown = rows[:12]
-              changes = "\n".join(f"• `{h}` {s} _({t})_" for h, s, t in shown)
+              changes = "\n".join(f"• `{h}` {s} _({t})_" for h, s, t in rows[:12])
               if len(rows) > 12:
-                  changes += f"\n• …and {len(rows)-12} more"
+                  changes += f"\n• …and {len(rows) - 12} more"
           else:
               changes = "✅ **No config changes in the last 24 hours** — settings have been stable."
 
           stamp = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
-          desc = ("**Current server config** (public + continuously audited):\n\n" +
+          desc = ("**Servers & current config** (public + continuously audited):\n\n" +
                   "\n\n".join(sections) +
                   "\n\n**Config changes — last 24h:**\n" + changes +
                   f"\n\n_Every setting is public and every change is a signed commit._ "
                   f"[Full history]({REPO}/commits/main) · {stamp}")
-          post("📋 The Iris — daily server report", desc, 0x2ECC71 if all_locked else 0xE01E1E)
-          print("posted; all_locked =", all_locked)
+          post("📋 The Iris — daily server report", desc, 0x2ECC71 if all_good else 0xE01E1E)
+          print("posted; all_good =", all_good)
           PY
