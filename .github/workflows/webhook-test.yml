@@ -34,7 +34,7 @@ jobs:
               raise SystemExit(0)
 
           body = json.dumps({"content": "🔧 Iris webhook diagnostic — if you see this, the webhook works!"}).encode()
-          req = urllib.request.Request(u, data=body, headers={"Content-Type": "application/json"})
+          req = urllib.request.Request(u, data=body, headers={"Content-Type": "application/json", "User-Agent": "RageQuit-Iris/1.0"})
           try:
               r = urllib.request.urlopen(req, timeout=15)
               print(f"RESULT: SUCCESS (HTTP {r.status}). Check #the-iris for the diagnostic message.")

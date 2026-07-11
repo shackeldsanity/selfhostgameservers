@@ -41,7 +41,7 @@ jobs:
               try:
                   urllib.request.urlopen(urllib.request.Request(
                       url, data=json.dumps(body).encode(),
-                      headers={"Content-Type": "application/json"}), timeout=15)
+                      headers={"Content-Type": "application/json", "User-Agent": "RageQuit-Iris/1.0"}), timeout=15)
               except Exception:
                   print("discord post failed (network or webhook error)")
 
@@ -96,7 +96,7 @@ jobs:
                   try:
                       urllib.request.urlopen(urllib.request.Request(
                           url, data=json.dumps(body).encode(),
-                          headers={"Content-Type": "application/json"}), timeout=15)
+                          headers={"Content-Type": "application/json", "User-Agent": "RageQuit-Iris/1.0"}), timeout=15)
                   except Exception:
                       print("discord post failed (network or webhook error)")
           print("All heartbeats OK")

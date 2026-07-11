@@ -128,7 +128,7 @@ def discord(title, lines):
     payload = {"embeds": [{"title": title, "description": desc, "color": 0xE01E1E}]}
     try:
         req = urllib.request.Request(
-            WEBHOOK, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}
+            WEBHOOK, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json", "User-Agent": "RageQuit-Iris/1.0"}
         )
         urllib.request.urlopen(req, timeout=15)
     except Exception as e:
