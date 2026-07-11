@@ -1,10 +1,10 @@
 {
   "game": "palworld",
-  "ts": 0,
-  "iso": "1970-01-01T00:00:00Z",
-  "status": "not-started",
-  "runtime_config_sha256": null,
-  "approved_config_sha256": null,
-  "image": "unknown",
-  "git_commit": "unknown"
+  "ts": 1783805870,
+  "iso": "2026-07-11T21:37:50Z",
+  "status": "ok",
+  "runtime_config_sha256": "f99d557cd888f96c1b5fe8d1d63f3f1869882f488caa0979b81f6646c2c0be53",
+  "approved_config_sha256": "f99d557cd888f96c1b5fe8d1d63f3f1869882f488caa0979b81f6646c2c0be53",
+  "image": "sha256:ae412908f99ed5422bb977d152838a6e2f5d1a6f1f5191a7d24217dcaccb7046",
+  "git_commit": "582cccd"
 }
