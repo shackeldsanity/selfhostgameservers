@@ -24,9 +24,10 @@ services:
       # NOTE: RCON (25575) and the REST API (8212) are deliberately NOT published.
       # Even if something flipped them on, they aren't reachable from outside.
     volumes:
-      # World saves are the ONLY writable state. The live PalWorldSettings.ini
-      # lands under ${SAVE_DIR}/Config/LinuxServer/ where the watcher reads it.
-      - "${SAVE_DIR}:/palworld/Pal/Saved"
+      # Persist the WHOLE game install so config changes don't re-download the ~5GB
+      # game. The live PalWorldSettings.ini lands under
+      # ${SAVE_DIR}/Pal/Saved/Config/LinuxServer/ where the watcher reads it.
+      - "${SAVE_DIR}:/palworld"
     ulimits:
       nofile:
         soft: 65536

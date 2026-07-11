@@ -3,7 +3,7 @@
   "display_name": "Palworld",
   "container": "palworld",
   "compose_dir": "games/palworld",
-  "live_config": "saves/Config/LinuxServer/PalWorldSettings.ini",
+  "live_config": "saves/Pal/Saved/Config/LinuxServer/PalWorldSettings.ini",
   "ports": ["8211/udp", "27015/udp"],
   "image_pin_env": "stack.env",
   "source_checks": [
