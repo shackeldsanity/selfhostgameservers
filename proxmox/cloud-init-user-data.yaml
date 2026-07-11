@@ -12,5 +12,5 @@ packages:
   - qemu-guest-agent
 runcmd:
   - [ systemctl, enable, --now, qemu-guest-agent ]
-  - [ git, clone, "https://github.com/shackeldsanity/selfhostgameservers.git", /opt/selfhostgameservers ]
-  - [ bash, -c, "REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git bash /opt/selfhostgameservers/proxmox/bootstrap-vm.sh" ]
+  - [ git, clone, "https://github.com/ShackledSanity/selfhostgameservers.git", /opt/selfhostgameservers ]
+  - [ bash, -c, "REPO_URL=https://github.com/ShackledSanity/selfhostgameservers.git bash /opt/selfhostgameservers/proxmox/bootstrap-vm.sh" ]

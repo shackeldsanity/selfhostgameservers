@@ -5,7 +5,7 @@
 # Safe to re-run. Works as a normal sudo user or when invoked as root by cloud-init.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/shackeldsanity/selfhostgameservers.git}"
+REPO_URL="${REPO_URL:-https://github.com/ShackledSanity/selfhostgameservers.git}"
 REPO_DIR=/opt/selfhostgameservers
 
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"

@@ -6,7 +6,7 @@ repo URL is filled in; paste your own SSH **public** key at step 3.
 ---
 
 You are connected to a **Proxmox VE host**. Set up a dedicated **Ubuntu 24.04 VM**
-to host our game servers (a multi-game host — Palworld first), following the repo at `https://github.com/shackeldsanity/selfhostgameservers.git`.
+to host our game servers (a multi-game host — Palworld first), following the repo at `https://github.com/ShackledSanity/selfhostgameservers.git`.
 
 **Do NOT install anything game-related on the Proxmox host OS itself** — everything
 runs inside the VM. This host has root; be deliberate.
@@ -26,7 +26,7 @@ ip -br link | grep -i vmbr # confirm the bridge (usually vmbr0)
 
 ## 2. Get the scripts
 ```bash
-git clone https://github.com/shackeldsanity/selfhostgameservers.git /root/selfhostgameservers
+git clone https://github.com/ShackledSanity/selfhostgameservers.git /root/selfhostgameservers
 cd /root/selfhostgameservers
 ```
 (If the repo isn't on GitHub yet, ask me to paste `proxmox/create-vm.sh`.)
@@ -54,9 +54,9 @@ yet, so fetch the bootstrap script first; it installs Docker + git and clones th
 repo to /opt itself:
 ```bash
 sudo apt-get update && sudo apt-get install -y curl
-curl -fsSL https://raw.githubusercontent.com/shackeldsanity/selfhostgameservers/main/proxmox/bootstrap-vm.sh -o /tmp/bootstrap-vm.sh
+curl -fsSL https://raw.githubusercontent.com/ShackledSanity/selfhostgameservers/main/proxmox/bootstrap-vm.sh -o /tmp/bootstrap-vm.sh
 cat /tmp/bootstrap-vm.sh    # optional: review before running
-REPO_URL=https://github.com/shackeldsanity/selfhostgameservers.git bash /tmp/bootstrap-vm.sh
+REPO_URL=https://github.com/ShackledSanity/selfhostgameservers.git bash /tmp/bootstrap-vm.sh
 ```
 
 ## 7. Deploy (inside the VM, in /opt/selfhostgameservers)
